@@ -1,19 +1,3 @@
-terraform {
-  required_providers {
-    # azuread = {
-    #   source = "hashicorp/azuread"
-    #   version = "~> 2.19"
-    # }
-    azureadb2cief = {
-      source  = "local/providers/azureadb2c"
-      version = "~> 1.0.3"
-    }
-    # random = {
-    #   source = "hashicorp/random"
-    #   version = ">= 3.1.0"
-    # }
-  }
-}
 provider "azuread" {}
 provider "azureadb2cief" {
   tenant_id = var.tenant_id
