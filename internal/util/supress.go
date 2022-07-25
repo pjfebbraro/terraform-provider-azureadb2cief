@@ -63,3 +63,7 @@ func canonicalXML(s string) (*string, error) {
 	results := re.ReplaceAllString(rawString, "")
 	return &results, nil
 }
+
+func NotCaseSensitive(_, old, new string, _ *schema.ResourceData) bool {
+	return strings.EqualFold(old, new)
+}

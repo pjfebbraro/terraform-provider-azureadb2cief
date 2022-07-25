@@ -31,6 +31,7 @@ func TrustFrameworkPolicyResource() *schema.Resource {
 					errors = append(errors, fmt.Errorf("custom_policy_key_set name (%s) must begin with B2C_1A_", name))
 					return
 				},
+				DiffSuppressFunc: util.NotCaseSensitive,
 			},
 			"policy": {
 				Description:      "The policy XML",

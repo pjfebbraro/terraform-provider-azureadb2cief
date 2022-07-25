@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/pjfebbraro/terraform-provider-azureadb2cief/internal/client"
 	"github.com/pjfebbraro/terraform-provider-azureadb2cief/internal/models"
+	"github.com/pjfebbraro/terraform-provider-azureadb2cief/internal/util"
 	"log"
 	"net/http"
 	"strings"
@@ -46,6 +47,7 @@ func TrustFrameworkKeySetResource() *schema.Resource {
 					errors = append(errors, err)
 					return
 				},
+				DiffSuppressFunc: util.NotCaseSensitive,
 			},
 			"kty": {
 				Type:        schema.TypeString,
@@ -63,6 +65,7 @@ func TrustFrameworkKeySetResource() *schema.Resource {
 					errors = append(errors, err)
 					return
 				},
+				DiffSuppressFunc: util.NotCaseSensitive,
 			},
 			"k": {
 				Description: "The optional secret value to upload.",
