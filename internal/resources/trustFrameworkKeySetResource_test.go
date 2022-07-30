@@ -133,6 +133,24 @@ func checkTrustFrameworkKeySetExists(resourceName string) resource.TestCheckFunc
 		return nil
 	}
 }
+func TestAccTrustFrameworkKeyset_mixedCasesDiffIgnore(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		ProviderFactories: map[string]func() (*schema.Provider, error){
+			"azureadb2cief": func() (*schema.Provider, error) {
+				return acceptance.AzureADB2CProvider, nil
+			},
+		},
+		Steps: []resource.TestStep{
+			{
+				Config: testAccTrustFrameworkKeyset3,
+			},
+			{
+				Config:   testAccTrustFrameworkKeyset3mixcase,
+				PlanOnly: true,
+			},
+		},
+	})
+}
 
 const testAccTrustFrameworkKeyset1 = `
 provider "azureadb2cief" {}
@@ -162,6 +180,14 @@ resource "azureadb2cief_trust_framework_key_set" "TestKeySet" {
   name = "B2C_1A_TestKeySet"
   use = "enc"
   kty = "RSA"
+}
+`
+const testAccTrustFrameworkKeyset3mixcase = `
+provider "azureadb2cief" {}
+resource "azureadb2cief_trust_framework_key_set" "TestKeySet" {
+  name = "B2C_1A_TestKeySet"
+  use = "ENC"
+  kty = "rsa"
 }
 `
 const testAccTrustFrameworkKeysetWithSecret = `

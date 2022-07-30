@@ -10,6 +10,7 @@ import (
 	"github.com/pjfebbraro/terraform-provider-azureadb2cief/internal/client"
 	"net/http"
 	"os"
+	"regexp"
 	"testing"
 )
 
@@ -76,6 +77,42 @@ func TestAccCustomPolicyE2E(t *testing.T) {
 	})
 }
 
+func TestAccCustomPolicyInvalidXml(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		ProviderFactories: map[string]func() (*schema.Provider, error){
+			"azureadb2cief": func() (*schema.Provider, error) {
+				return acceptance.AzureADB2CProvider, nil
+			},
+		},
+		PreCheck: func() {
+			preCheckEnv(t)
+		},
+		Steps: []resource.TestStep{
+			{
+				Config:      testInvalidPolicyXml,
+				ExpectError: regexp.MustCompile("Invalid Policy XML"),
+			},
+		},
+	})
+}
+func TestAccCustomPolicyInvalidXml2(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		ProviderFactories: map[string]func() (*schema.Provider, error){
+			"azureadb2cief": func() (*schema.Provider, error) {
+				return acceptance.AzureADB2CProvider, nil
+			},
+		},
+		PreCheck: func() {
+			preCheckEnv(t)
+		},
+		Steps: []resource.TestStep{
+			{
+				Config:      testInvalidPolicyXml2,
+				ExpectError: regexp.MustCompile("Invalid Policy XML"),
+			},
+		},
+	})
+}
 func preCheckEnv(t *testing.T) {
 	variables := []string{
 		"TF_VAR_tenant_name",
@@ -316,5 +353,87 @@ locals {
 	ProxyIdentityExperienceFrameworkAppId = azuread_application.ProxyIdentityExperienceFramework.application_id
 	IdentityExperienceFrameworkAppId = azuread_application.IdentityExperienceFramework.application_id
   }
+}
+`
+
+const testInvalidPolicyXml = `
+provider "azureadb2cief" {}
+resource "azureadb2cief_trust_framework_key_set" "TokenSigningKeyContainer" {
+  name = "B2C_1A_TokenSigningKeyContainer"
+  use = "sig"
+  kty = "RSA"
+}
+resource "azureadb2cief_trust_framework_key_set" "TokenEncryptionKeyContainer" {
+  name = "B2C_1A_TokenEncryptionKeyContainer"
+  use = "enc"
+  kty = "RSA"
+}
+resource "azureadb2cief_trust_framework_policy" "TrustFrameworkBase" {
+  name = "B2C_1A_TrustFrameworkBase"
+  policy = templatefile("${path.module}/testdata/B2C_1A_TrustFrameworkBase_invalid_xml.xml", local.template_vars)
+}
+
+locals {
+  template_vars = {
+    tenant_name = var.tenant_name
+    tenant_object_id = var.tenant_object_id
+    is_development = var.is_development
+	token_signing_key_container = azureadb2cief_trust_framework_key_set.TokenSigningKeyContainer.name
+	token_encryption_key_container = azureadb2cief_trust_framework_key_set.TokenEncryptionKeyContainer.name
+  }
+}
+
+variable "tenant_name" {
+  type = string
+}
+
+variable "tenant_object_id" {
+  type = string
+}
+
+variable "is_development" {
+  type = bool
+  default = true
+}
+`
+
+const testInvalidPolicyXml2 = `
+provider "azureadb2cief" {}
+resource "azureadb2cief_trust_framework_key_set" "TokenSigningKeyContainer" {
+  name = "B2C_1A_TokenSigningKeyContainer"
+  use = "sig"
+  kty = "RSA"
+}
+resource "azureadb2cief_trust_framework_key_set" "TokenEncryptionKeyContainer" {
+  name = "B2C_1A_TokenEncryptionKeyContainer"
+  use = "enc"
+  kty = "RSA"
+}
+resource "azureadb2cief_trust_framework_policy" "TrustFrameworkBase" {
+  name = "B2C_1A_TrustFrameworkBase"
+  policy = templatefile("${path.module}/testdata/B2C_1A_TrustFrameworkBase_invalid_xml.xml", local.template_vars)
+}
+
+locals {
+  template_vars = {
+    tenant_name = var.tenant_name
+    tenant_object_id = var.tenant_object_id
+    is_development = var.is_development
+	token_signing_key_container = azureadb2cief_trust_framework_key_set.TokenSigningKeyContainer.name
+	token_encryption_key_container = azureadb2cief_trust_framework_key_set.TokenEncryptionKeyContainer.name
+  }
+}
+
+variable "tenant_name" {
+  type = string
+}
+
+variable "tenant_object_id" {
+  type = string
+}
+
+variable "is_development" {
+  type = bool
+  default = true
 }
 `

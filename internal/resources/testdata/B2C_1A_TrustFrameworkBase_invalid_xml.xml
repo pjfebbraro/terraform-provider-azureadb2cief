@@ -1,10 +1,16 @@
-<?xml   version = "1.0"    encoding = "utf-8"    ?>
+<?xml version="1.1" encoding="utf-8" ?>
 <TrustFrameworkPolicy xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                       xmlns:xsd="http://www.w3.org/2001/XMLSchema"
                       xmlns="http://schemas.microsoft.com/online/cpim/schemas/2013/06"
                       PolicySchemaVersion="0.3.0.0" TenantId="${tenant_name}.onmicrosoft.com" PolicyId="B2C_1A_TrustFrameworkBase"
                       PublicPolicyUri="http://${tenant_name}.onmicrosoft.com/B2C_1A_TrustFrameworkBase"
                       TenantObjectId="${tenant_object_id}"
+        %{ if is_development }
+        DeploymentMode="Development"
+        UserJourneyRecorderEndpoint="urn:journeyrecorder:applicationinsights"
+        %{ else }
+        DeploymentMode="Production"
+        %{endif}
         >
 <BuildingBlocks>
 <ClaimsSchema>
