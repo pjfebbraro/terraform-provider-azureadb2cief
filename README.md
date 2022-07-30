@@ -27,7 +27,7 @@ provider "azuread" {
 Azure CLI and Service Principal with Client Id and Secret are Supported:
 
 * Authenticating to Azure Active Directory using the Azure CLI
-* [Authenticating to Azure Active Directory using a Service Principal and a Client Secret]
+* Authenticating to Azure Active Directory using a Service Principal and a Client Secret
 
 
 ## Argument Reference
