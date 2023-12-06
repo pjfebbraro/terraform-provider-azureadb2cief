@@ -9,7 +9,7 @@ The Azure Provider can be used to configure custom policies in [Azure Active Dir
 terraform {
   required_providers {
     azureadb2cief = {
-      source  = "pjfebbraro/azureadb2cieif"
+      source  = "pjfebbraro/azureadb2cief"
       version = "~> 0.1.0"
     }
   }
