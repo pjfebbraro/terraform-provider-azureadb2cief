@@ -33,7 +33,7 @@ func TrustFrameworkKeySetResource() *schema.Resource {
 			},
 			"use": {
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
 				ForceNew:    true,
 				Description: "Specifies if the key use is signature or encryption.  Valid values are 'sig' or 'enc'.",
 				ValidateFunc: func(i interface{}, s string) (warnings []string, errors []error) {
@@ -79,13 +79,50 @@ func TrustFrameworkKeySetResource() *schema.Resource {
 				Type:        schema.TypeInt,
 				Optional:    true,
 				ForceNew:    true,
+				Computed:    true,
 				Description: "Not valid before date, this value is a NumericDate as defined in RFC 7519.",
 			},
 			"exp": {
 				Type:        schema.TypeInt,
 				Optional:    true,
 				ForceNew:    true,
+				Computed:    true,
 				Description: "Expiration date, this value is a NumericDate as defined in RFC 7519.",
+			},
+			"type": {
+				Type:        schema.TypeString,
+				Required:    true, //will require migration
+				ForceNew:    true,
+				Description: "Specifies the key type.  Valid values are 'secret', 'pfx' and 'pem'",
+				ValidateFunc: func(i interface{}, s string) (warnings []string, errors []error) {
+					if i == nil {
+						return
+					}
+
+					typeVal := i.(string)
+					typeVal = strings.ToLower(typeVal)
+					if typeVal == "pfx" || typeVal == "cer" || typeVal == "secret" {
+						return
+					}
+
+					err := fmt.Errorf("invalid 'type' value: %s, valid values are 'secret' and 'cer', and 'pfx'", typeVal)
+					errors = append(errors, err)
+					return
+				},
+			},
+			"value": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				ForceNew:    true,
+				Sensitive:   true,
+				Description: "When type is pfx or cer, the Base64 encoded pfx or cer file.",
+			},
+			"password": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				ForceNew:    true,
+				Sensitive:   true,
+				Description: "When type is pfx, the password for the pfx file.",
 			},
 		},
 		CreateContext: createKey,
@@ -94,6 +131,7 @@ func TrustFrameworkKeySetResource() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
+
 		SchemaVersion: 1,
 	}
 }
@@ -160,16 +198,34 @@ func createKey(ctx context.Context, data *schema.ResourceData, i interface{}) di
 	name := data.Get("name").(string)
 	kty := data.Get("kty").(string)
 	use := data.Get("use").(string)
+	keyType := data.Get("type").(string)
+
+	if keyType == "pfx" {
+		if _, ok := data.GetOk("value"); !ok {
+			return diag.Errorf("The 'value' field is required for key type of 'pfx'")
+		}
+		if _, ok := data.GetOk("password"); !ok {
+			return diag.Errorf("The 'password' field is required for key type of 'pfx'")
+		}
+		if _, ok := data.GetOk("use"); ok {
+			return diag.Errorf("The 'use' field should not be specified for key type of 'pfx'")
+		}
+	} else if keyType == "cer" {
+		if _, ok := data.GetOk("value"); !ok {
+			return diag.Errorf("The 'value' field is required for key type of 'cer'")
+		}
+		if _, ok := data.GetOk("use"); ok {
+			return diag.Errorf("The 'use' field should not be specified for key type of 'cer'")
+		}
+	} else {
+		if _, ok := data.GetOk("use"); !ok {
+			return diag.Errorf("The 'use' field is required for key type of 'secret'")
+		}
+	}
 
 	key := models.TrustFrameworkKey{
 		Kty: &kty,
 		Use: &use,
-	}
-	specifiedSecret := false
-	if rawSecret, ok := data.GetOk("k"); ok {
-		secret := rawSecret.(string)
-		key.K = &secret
-		specifiedSecret = true
 	}
 
 	if expRaw, ok := data.GetOk("exp"); ok {
@@ -187,10 +243,32 @@ func createKey(ctx context.Context, data *schema.ResourceData, i interface{}) di
 	}
 	data.SetId(*keyset.Id)
 
-	if specifiedSecret {
-		_, err = keySetClient.UploadSecret(ctx, *keyset.Id, key)
+	if keyType == "pfx" {
+		password := data.Get("password").(string)
+		pfx := data.Get("value").(string)
+		pfxKey := models.TrustFrameworkPfxKey{
+			Key:      &pfx,
+			Password: &password,
+		}
+		_, err = keySetClient.UploadPFX(ctx, *keyset.Id, pfxKey)
+	} else if keyType == "cer" {
+		cer := data.Get("value").(string)
+		cerKey := models.TrustFrameworkCerKey{
+			Key: &cer,
+		}
+		_, err = keySetClient.UploadCER(ctx, *keyset.Id, cerKey)
 	} else {
-		_, err = keySetClient.GenerateKey(ctx, *keyset.Id, key)
+		specifiedSecret := false
+		if rawSecret, ok := data.GetOk("k"); ok {
+			secret := rawSecret.(string)
+			key.K = &secret
+			specifiedSecret = true
+		}
+		if specifiedSecret {
+			_, err = keySetClient.UploadSecret(ctx, *keyset.Id, key)
+		} else {
+			_, err = keySetClient.GenerateKey(ctx, *keyset.Id, key)
+		}
 	}
 
 	if err != nil {

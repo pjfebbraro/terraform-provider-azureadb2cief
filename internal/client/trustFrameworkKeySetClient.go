@@ -149,6 +149,45 @@ func (c *TrustFrameworkKeySetClient) UploadSecret(ctx context.Context, id string
 	}
 	return status, nil
 }
+func (c *TrustFrameworkKeySetClient) UploadPFX(ctx context.Context, id string, key models.TrustFrameworkPfxKey) (int, error) {
+	path := fmt.Sprintf("/trustFramework/keySets/%s/uploadPkcs12", id)
+
+	body, err := json.Marshal(key)
+	var status int
+	if err != nil {
+		return status, err
+	}
+	contentType := "application/json"
+	response, err := c.doRequest(ctx, path, http.MethodPost, bytes.NewBuffer(body), &contentType)
+	if err != nil {
+		return status, err
+	}
+	status = response.StatusCode
+	if status != 200 {
+		return status, formatHttpErrorResponse(response)
+	}
+	return status, nil
+}
+func (c *TrustFrameworkKeySetClient) UploadCER(ctx context.Context, id string, key models.TrustFrameworkCerKey) (int, error) {
+	path := fmt.Sprintf("/trustFramework/keySets/%s/uploadCertificate", id)
+
+	body, err := json.Marshal(key)
+	var status int
+	if err != nil {
+		return status, err
+	}
+	contentType := "application/json"
+	response, err := c.doRequest(ctx, path, http.MethodPost, bytes.NewBuffer(body), &contentType)
+	if err != nil {
+		return status, err
+	}
+	status = response.StatusCode
+	if status != 200 {
+		return status, formatHttpErrorResponse(response)
+	}
+	return status, nil
+}
+
 func (c *TrustFrameworkKeySetClient) DeleteKey(ctx context.Context, id string) (int, error) {
 	path := fmt.Sprintf("/trustFramework/keySets/%s", id)
 	response, err := c.doRequest(ctx, path, http.MethodDelete, http.NoBody, nil)

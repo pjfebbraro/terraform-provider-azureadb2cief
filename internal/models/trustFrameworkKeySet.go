@@ -12,3 +12,11 @@ type TrustFrameworkKeySet struct {
 	Id   *string             `json:"id"`
 	Keys []TrustFrameworkKey `json:"keys"`
 }
+
+type TrustFrameworkPfxKey struct {
+	Key      *string `json:"key"`
+	Password *string `json:"password"`
+}
+type TrustFrameworkCerKey struct {
+	Key *string `json:"key"`
+}
